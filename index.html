@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gear Teeth Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#181c26;--surface2:#1f2432;
+  --border:rgba(255,255,255,0.08);--border-h:rgba(255,255,255,0.18);
+  --text:#e8eaf0;--muted:#7a8099;--dim:#4a5068;
+  --blue:#378ADD;--blue-d:rgba(55,138,221,0.15);
+  --teal:#1D9E75;--teal-d:rgba(29,158,117,0.15);
+  --amber:#EF9F27;
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --r:10px;--rs:6px;
+}
+@media(prefers-color-scheme:light){
+  :root{--bg:#f0f2f7;--surface:#fff;--surface2:#f5f6fa;
+  --border:rgba(0,0,0,0.08);--border-h:rgba(0,0,0,0.18);
+  --text:#1a1d2e;--muted:#5a6080;--dim:#9aa0b8;
+  --blue-d:rgba(55,138,221,0.1);--teal-d:rgba(29,158,117,0.1)}
+}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;min-height:100vh}
+.app{max-width:560px;margin:0 auto;padding:1.5rem 1rem 4rem}
+header{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem}
+.gear-icon{width:36px;height:36px;flex-shrink:0}
+header h1{font-size:17px;font-weight:600;letter-spacing:-.02em}
+header p{font-size:11px;color:var(--muted);margin-top:1px}
+.nav{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:1.25rem;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav button{flex:1;min-width:fit-content;padding:6px 8px;font-size:12px;font-family:var(--font);font-weight:500;border:1px solid transparent;border-radius:var(--rs);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s}
+.nav button:hover{color:var(--text);background:var(--surface2)}
+.nav button.active{background:var(--surface2);color:var(--text);border-color:var(--border-h)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.1rem 1.25rem;margin-bottom:10px}
+.slabel{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;font-weight:500}
+.field{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.field:last-child{border-bottom:none;padding-bottom:0}
+.field:first-child{padding-top:0}
+.field label{font-size:13px;color:var(--muted);min-width:148px;flex-shrink:0}
+.field input[type=number],.field select{flex:1;min-width:0;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:13px;padding:5px 9px;outline:none;transition:border-color .15s;-moz-appearance:textfield;appearance:textfield}
+.field input[type=number]::-webkit-inner-spin-button{opacity:.4}
+.field input:focus,.field select:focus{border-color:var(--blue)}
+.field .unit{font-size:11px;color:var(--dim);font-family:var(--mono);min-width:26px;text-align:right}
+.results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:10px}
+.ri{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px}
+.ri.wide{grid-column:1/-1}
+.ri.ab{border-color:rgba(55,138,221,.35);background:var(--blue-d)}
+.ri.at{border-color:rgba(29,158,117,.35);background:var(--teal-d)}
+.rl{font-size:11px;color:var(--dim);margin-bottom:4px}
+.rv{font-size:19px;font-weight:600;font-family:var(--mono);color:var(--text);letter-spacing:-.02em}
+.rs{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.rw{font-size:11px;color:var(--amber);margin-top:3px}
+.formula{background:var(--surface);border:1px solid var(--border);border-left:2px solid var(--border-h);border-radius:0 var(--rs) var(--rs) 0;padding:8px 13px;font-size:11.5px;font-family:var(--mono);color:var(--muted);margin-bottom:10px;line-height:1.9}
+.gvis{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.75rem;margin-bottom:10px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+canvas{display:block;max-width:100%;height:auto}
+.mode{display:none}
+.mode.active{display:block}
+
+/* Drawing tab */
+.draw-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.75rem;margin-bottom:10px;overflow:hidden}
+.draw-canvas-wrap{background:#fff;border-radius:calc(var(--r) - 4px);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.draw-controls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.draw-controls label{font-size:12px;color:var(--muted)}
+.draw-controls select,.draw-controls input[type=number]{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:12px;padding:4px 8px;outline:none;width:80px}
+.draw-controls input:focus,.draw-controls select:focus{border-color:var(--blue)}
+.draw-info{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.draw-info span{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.draw-info b{color:var(--text)}
+
+/* Export tab */
+.export-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.exp-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;cursor:pointer;transition:all .15s;position:relative}
+.exp-card:hover{border-color:var(--border-h);background:var(--surface2)}
+.exp-card:active{transform:scale(.98)}
+.exp-tag{font-size:15px;font-weight:600;font-family:var(--mono);color:var(--text);margin-bottom:3px}
+.exp-name{font-size:11.5px;color:var(--muted);margin-bottom:8px}
+.exp-desc{font-size:11px;color:var(--dim);line-height:1.5}
+.exp-btn{margin-top:10px;width:100%;padding:6px;font-size:12px;font-family:var(--font);font-weight:500;border:1px solid var(--border-h);border-radius:var(--rs);background:transparent;color:var(--text);cursor:pointer;transition:all .15s}
+.exp-btn:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+.exp-notice{background:var(--surface);border:1px solid var(--border);border-left:2px solid var(--amber);border-radius:0 var(--rs) var(--rs) 0;padding:8px 12px;font-size:11.5px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--teal);color:#fff;font-size:12px;font-family:var(--mono);padding:8px 16px;border-radius:20px;opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Stress & Fatigue tab */
+.stress-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.stress-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;font-size:12px;font-weight:600;font-family:var(--mono);gap:8px;flex-wrap:wrap}
+.stress-head.s-ok{background:rgba(29,158,117,.12);border-bottom:1px solid rgba(29,158,117,.25);color:var(--teal)}
+.stress-head.s-warn{background:rgba(239,159,39,.12);border-bottom:1px solid rgba(239,159,39,.25);color:var(--amber)}
+.stress-head.s-fail{background:rgba(229,57,53,.12);border-bottom:1px solid rgba(229,57,53,.3);color:#E53935}
+.s-body{padding:10px 14px}
+.s-section{margin-bottom:12px}
+.s-section-label{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;font-weight:600}
+.s-qrow{display:flex;gap:10px;flex-wrap:wrap}
+.s-qrow span{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.s-qrow b{color:var(--text)}
+.s-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:6px}
+.s-cell{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px}
+.s-cell.wide{grid-column:1/-1}
+.s-cell-lbl{font-size:10px;color:var(--dim);margin-bottom:3px}
+.s-cell-val{font-size:16px;font-weight:600;font-family:var(--mono);color:var(--text);letter-spacing:-.02em}
+.s-cell-val.over{color:#E53935}
+.s-cell-sub{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.s-bar-wrap{height:4px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden}
+.s-bar{height:100%;border-radius:2px;transition:width .4s}
+.s-bar.ok{background:var(--teal)}.s-bar.warn{background:var(--amber)}.s-bar.fail{background:#E53935}
+.s-sf-row{font-size:12px;color:var(--muted);margin-top:5px}
+.sf-ok{color:var(--teal);font-weight:600}.sf-warn{color:var(--amber);font-weight:600}.sf-fail{color:#E53935;font-weight:600}
+.s-fw-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;font-size:12px;font-family:var(--mono)}
+.s-fw-row span{color:var(--muted)}.s-fw-row b{color:var(--text)}
+.fw-warn{color:var(--amber);font-weight:600}.fw-ok{color:var(--teal);font-weight:600}
+
+footer{margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--border);font-size:11px;color:var(--dim);text-align:center;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <svg class="gear-icon" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="19" cy="19" r="18.5" stroke="#378ADD" stroke-opacity="0.3"/>
+    <path d="M19 11.5a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15Zm0 11a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" fill="#378ADD" fill-opacity="0.8"/>
+    <path d="M19 7v3M19 28v3M7 19h3M28 19h3M10.05 10.05l2.12 2.12M25.83 25.83l2.12 2.12M10.05 27.95l2.12-2.12M25.83 12.17l2.12-2.12" stroke="#378ADD" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <div>
+    <h1>Gear Teeth Calculator</h1>
+    <p>Spur &amp; bevel · Engineering drawing · CAD export</p>
+  </div>
+</header>
+
+<div class="nav">
+  <button class="active" onclick="setMode('ratio')" id="tab-ratio">Gear ratio</button>
+  <button onclick="setMode('module')" id="tab-module">Module / pitch</button>
+  <button onclick="setMode('compound')" id="tab-compound">Compound</button>
+  <button onclick="setMode('bevel')" id="tab-bevel">Bevel gears</button>
+  <button onclick="setMode('stress')" id="tab-stress">Stress &amp; Fatigue</button>
+  <button onclick="setMode('drawing')" id="tab-drawing">Drawing</button>
+  <button onclick="setMode('export')" id="tab-export">Export</button>
+</div>
+
+<!-- RATIO -->
+<div class="mode active" id="mode-ratio">
+  <div class="card">
+    <div class="slabel">Spur gear — tooth &amp; ratio</div>
+    <div class="field"><label>Driver teeth (N₁)</label><input type="number" id="r-n1" value="20" min="6" max="400" oninput="calcRatio()"><span class="unit">T</span></div>
+    <div class="field"><label>Driven teeth (N₂)</label><input type="number" id="r-n2" value="40" min="6" max="400" oninput="calcRatio()"><span class="unit">T</span></div>
+    <div class="field"><label>Input speed</label><input type="number" id="r-rpm" value="1000" min="1" oninput="calcRatio()"><span class="unit">rpm</span></div>
+    <div class="field"><label>Input torque</label><input type="number" id="r-torque" value="10" min="0" step="0.1" oninput="calcRatio()"><span class="unit">N·m</span></div>
+  </div>
+  <div class="results" id="ratio-results"></div>
+  <div class="gvis"><canvas id="gear-canvas" width="480" height="150"></canvas></div>
+  <div class="formula">GR = N₂ ÷ N₁ &nbsp;|&nbsp; ω₂ = ω₁ ÷ GR &nbsp;|&nbsp; τ₂ = τ₁ × GR</div>
+</div>
+
+<!-- MODULE -->
+<div class="mode" id="mode-module">
+  <div class="card">
+    <div class="slabel">Module, pitch &amp; tooth geometry</div>
+    <div class="field">
+      <label>Standard module (m)</label>
+      <select id="m-module" onchange="onModSel()">
+        <option value="0.5">0.5</option><option value="0.8">0.8</option>
+        <option value="1">1</option><option value="1.25">1.25</option>
+        <option value="1.5">1.5</option><option value="2" selected>2 (std)</option>
+        <option value="2.5">2.5</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option>
+        <option value="6">6</option><option value="8">8</option>
+        <option value="10">10</option><option value="custom">Custom…</option>
+      </select>
+      <span class="unit">mm</span>
+    </div>
+    <div class="field" id="custom-m-row" style="display:none"><label>Custom module</label><input type="number" id="m-custom" value="2" min="0.1" step="0.1" oninput="calcModule()"><span class="unit">mm</span></div>
+    <div class="field"><label>Number of teeth (N)</label><input type="number" id="m-teeth" value="24" min="6" max="400" oninput="calcModule()"><span class="unit">T</span></div>
+    <div class="field">
+      <label>Pressure angle (φ)</label>
+      <select id="m-pa" onchange="calcModule()">
+        <option value="14.5">14.5° (legacy)</option>
+        <option value="20" selected>20° (standard)</option>
+        <option value="25">25° (high load)</option>
+      </select>
+    </div>
+  </div>
+  <div class="results" id="module-results"></div>
+  <div class="formula">d = m×N &nbsp;|&nbsp; p = π×m &nbsp;|&nbsp; ha = m &nbsp;|&nbsp; hf = 1.25m<br>da = d+2ha &nbsp;|&nbsp; dr = d−2hf &nbsp;|&nbsp; rb = (d/2)·cos φ</div>
+</div>
+
+<!-- COMPOUND GEARING -->
+<div class="mode" id="mode-compound">
+  <div class="card">
+    <div class="slabel">Multi-stage compound gearing</div>
+    <div class="field">
+      <label>Number of stages</label>
+      <select id="c-stages" onchange="updateCompoundStages()">
+        <option value="1">1 stage</option>
+        <option value="2" selected>2 stages</option>
+        <option value="3">3 stages</option>
+        <option value="4">4 stages</option>
+      </select>
+    </div>
+    <div class="field"><label>Input speed</label><input type="number" id="c-rpm" value="1000" min="1" oninput="calcCompound()"><span class="unit">rpm</span></div>
+    <div class="field"><label>Input torque</label><input type="number" id="c-torque" value="10" min="0" step="0.1" oninput="calcCompound()"><span class="unit">N·m</span></div>
+  </div>
+  
+  <div id="compound-stages-container"></div>
+  
+  <div class="results" id="compound-results"></div>
+  <div class="gvis"><canvas id="compound-canvas" width="480" height="200"></canvas></div>
+  <div class="formula"><span id="compound-gr-formula">GR_total = GR₁ × GR₂</span> &nbsp;|&nbsp; ω_out = ω_in ÷ GR_total &nbsp;|&nbsp; τ_out = τ_in × GR_total × η^n</div>
+</div>
+
+<!-- BEVEL -->
+<div class="mode" id="mode-bevel">
+  <div class="card">
+    <div class="slabel">Bevel gear pair</div>
+    <div class="field"><label>Pinion teeth (N₁)</label><input type="number" id="b-n1" value="16" min="6" max="200" oninput="calcBevel()"><span class="unit">T</span></div>
+    <div class="field"><label>Gear teeth (N₂)</label><input type="number" id="b-n2" value="32" min="6" max="200" oninput="calcBevel()"><span class="unit">T</span></div>
+    <div class="field"><label>Shaft angle (Σ)</label><input type="number" id="b-shaft" value="90" min="1" max="179" oninput="calcBevel()"><span class="unit">deg</span></div>
+    <div class="field"><label>Mean module (m)</label><input type="number" id="b-module" value="2" min="0.1" step="0.1" oninput="calcBevel()"><span class="unit">mm</span></div>
+  </div>
+  <div class="results" id="bevel-results"></div>
+  <div class="formula">δ₁ = atan(sin Σ ÷ (N₂/N₁ + cos Σ)) &nbsp;|&nbsp; δ₂ = Σ − δ₁<br>d = m×N &nbsp;|&nbsp; R = (d₁/2)÷sin δ₁ &nbsp;|&nbsp; face width ≤ R/3</div>
+</div>
+
+<!-- DRAWING -->
+<div class="mode" id="mode-drawing">
+  <div class="draw-wrap">
+    <div class="slabel" style="margin-bottom:8px">Engineering drawing</div>
+    <div class="draw-controls">
+      <label>Teeth (N)</label>
+      <input type="number" id="d-teeth" value="24" min="6" max="120" oninput="renderDrawing()">
+      <label style="margin-left:6px">Module (m)</label>
+      <input type="number" id="d-module" value="2" min="0.1" step="0.1" oninput="renderDrawing()">
+      <label style="margin-left:6px">Bore ⌀</label>
+      <input type="number" id="d-bore" value="20" min="1" step="0.5" oninput="renderDrawing()">
+      <label style="margin-left:6px">View</label>
+      <select id="d-view" onchange="renderDrawing()">
+        <option value="front">Front</option>
+        <option value="section">Section</option>
+        <option value="both" selected>Both</option>
+      </select>
+    </div>
+    <div class="draw-canvas-wrap" id="draw-canvas-wrap">
+      <canvas id="draw-canvas" width="510" height="340" style="display:block"></canvas>
+    </div>
+    <div class="draw-info" id="draw-info"></div>
+  </div>
+  <div class="card" style="margin-bottom:10px">
+    <div class="slabel">Face width</div>
+    <div class="field"><label>Face width (b)</label><input type="number" id="d-facewidth" value="14" min="1" step="0.5" oninput="renderDrawing()"><span class="unit">mm</span></div>
+    <div class="field"><label>Pressure angle (φ)</label>
+      <select id="d-pa" onchange="renderDrawing()">
+        <option value="14.5">14.5°</option><option value="20" selected>20°</option><option value="25">25°</option>
+      </select>
+    </div>
+    <div class="field"><label>Keyway</label>
+      <select id="d-keyway" onchange="renderDrawing()">
+        <option value="none" selected>None</option>
+        <option value="yes">Show keyway</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- STRESS & FATIGUE -->
+<div class="mode" id="mode-stress">
+  <div class="card">
+    <div class="slabel">Analysis settings</div>
+    <div class="field">
+      <label>Stages to analyse</label>
+      <select id="st-stages" onchange="updateStressStages()">
+        <option value="1" selected>1 stage</option>
+        <option value="2">2 stages</option>
+        <option value="3">3 stages</option>
+        <option value="4">4 stages</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Application factor (K<sub>A</sub>)</label>
+      <select id="st-ka" onchange="calcStress()">
+        <option value="1.00">1.00 — Uniform (electric motor)</option>
+        <option value="1.25" selected>1.25 — Light shock (turbine)</option>
+        <option value="1.50">1.50 — Moderate shock (engine)</option>
+        <option value="1.75">1.75 — Heavy shock (construction)</option>
+        <option value="2.00">2.00 — Very heavy shock</option>
+      </select>
+    </div>
+  </div>
+  <div id="stress-stages-container"></div>
+  <div id="stress-results-container"></div>
+  <div class="formula">
+    &sigma;<sub>F</sub> = F<sub>t</sub>&middot;K<sub>A</sub>&middot;K<sub>v</sub>&middot;K<sub>F&beta;</sub>&middot;Y<sub>&epsilon;</sub> / (b&middot;m&middot;Y) &nbsp;|&nbsp; &sigma;<sub>H</sub> = Z<sub>H</sub>&middot;Z<sub>E</sub>&middot;Z<sub>&epsilon;</sub>&middot;&radic;(F<sub>t</sub>&middot;K<sub>A</sub>&middot;K<sub>v</sub>&middot;(u+1)/(b&middot;d<sub>1</sub>&middot;u))<br>
+    N<sub>F</sub> = 3&times;10<sup>6</sup>&middot;(&sigma;<sub>Flim</sub>/&sigma;<sub>F</sub>)<sup>6.35</sup> &nbsp;|&nbsp; ISO 6336 &middot; Lewis &middot; Hertz &middot; W&ouml;hler S-N
+  </div>
+</div>
+
+<!-- EXPORT -->
+<div class="mode" id="mode-export">
+  <div class="exp-notice">
+    All files are generated in your browser from the current drawing parameters. Open the <strong>Drawing</strong> tab first to configure the gear geometry, then export below.
+  </div>
+  <div class="card" style="margin-bottom:10px">
+    <div class="slabel">Export parameters (from Drawing tab)</div>
+    <div class="field"><label>Teeth (N)</label><input type="number" id="e-teeth" value="24" min="6" max="120" oninput="syncExport()"><span class="unit">T</span></div>
+    <div class="field"><label>Module (m)</label><input type="number" id="e-module" value="2" min="0.1" step="0.1" oninput="syncExport()"><span class="unit">mm</span></div>
+    <div class="field"><label>Bore diameter</label><input type="number" id="e-bore" value="20" min="1" step="0.5" oninput="syncExport()"><span class="unit">mm</span></div>
+    <div class="field"><label>Face width</label><input type="number" id="e-facewidth" value="14" min="1" step="0.5" oninput="syncExport()"><span class="unit">mm</span></div>
+  </div>
+  <div class="export-grid">
+    <div class="exp-card">
+      <div class="exp-tag">.DXF</div>
+      <div class="exp-name">AutoCAD Drawing Exchange</div>
+      <div class="exp-desc">2D gear profile with dimension layers. Opens in AutoCAD, LibreCAD, DraftSight, Fusion 360.</div>
+      <button class="exp-btn" onclick="exportDXF()">Download DXF</button>
+    </div>
+    <div class="exp-card">
+      <div class="exp-tag">.SVG</div>
+      <div class="exp-name">Scalable Vector Graphic</div>
+      <div class="exp-desc">Precise gear outline for laser cutting, Inkscape, Illustrator, or web use.</div>
+      <button class="exp-btn" onclick="exportSVG()">Download SVG</button>
+    </div>
+    <div class="exp-card">
+      <div class="exp-tag">.NC</div>
+      <div class="exp-name">CNC G-code (turning)</div>
+      <div class="exp-desc">ISO G-code for CNC lathe. Faces blank to OD, bores to ID. Metric, G21 modal.</div>
+      <button class="exp-btn" onclick="exportNC()">Download NC</button>
+    </div>
+    <div class="exp-card">
+      <div class="exp-tag">.STL</div>
+      <div class="exp-name">ASCII STL mesh</div>
+      <div class="exp-desc">Triangulated solid for 3D printing or mesh import. Face width sets extrusion depth.</div>
+      <button class="exp-btn" onclick="exportSTL()">Download STL</button>
+    </div>
+    <div class="exp-card">
+      <div class="exp-tag">.STEP</div>
+      <div class="exp-name">ISO 10303 AP203</div>
+      <div class="exp-desc">Parametric geometry text file. Importable in FreeCAD, Fusion 360, SolidWorks, CATIA.</div>
+      <button class="exp-btn" onclick="exportSTEP()">Download STEP</button>
+    </div>
+    <div class="exp-card">
+      <div class="exp-tag">.CSV</div>
+      <div class="exp-name">Tooth profile points</div>
+      <div class="exp-desc">XY coordinates of the involute tooth profile. Use in Excel, MATLAB, or CAD spline import.</div>
+      <button class="exp-btn" onclick="exportCSV()">Download CSV</button>
+    </div>
+  </div>
+  <div class="exp-notice" style="border-left-color:var(--blue)">
+    STEP and STL are approximations suitable for prototyping and visualisation. For production gears, verify against ISO 1328 tolerances.
+  </div>
+</div>
+
+<footer>Gear Teeth Calculator &nbsp;·&nbsp; Spur &amp; bevel engineering<br>Formulas per ISO 21771 &amp; AGMA 2001 &nbsp;·&nbsp; All exports generated client-side</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── helpers ──────────────────────────────────────────────
+function fmt(n,d=2){return isNaN(n)||!isFinite(n)?'—':n.toFixed(d)}
+function fmtI(n){return isNaN(n)?'—':Math.round(n).toLocaleString()}
+function setResults(id,items){
+  document.getElementById(id).innerHTML=items.map(it=>`
+    <div class="ri ${it.wide?'wide':''} ${it.ac||''}">
+      <div class="rl">${it.l}</div>
+      <div class="rv">${it.v}</div>
+      ${it.s?`<div class="rs">${it.s}</div>`:''}
+      ${it.w?`<div class="rw">⚠ ${it.w}</div>`:''}
+    </div>`).join('')
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200)
+}
+function download(name,content,mime='text/plain'){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type:mime}));
+  a.download=name;a.click()
+}
+
+function setMode(m){
+  ['ratio','module','compound','bevel','stress','drawing','export'].forEach(k=>{
+    document.getElementById('mode-'+k).classList.toggle('active',k===m);
+    document.getElementById('tab-'+k).classList.toggle('active',k===m);
+  });
+  if(m==='compound')calcCompound();
+  if(m==='stress'){updateStressStages();calcStress();}
+  if(m==='drawing')renderDrawing();
+  if(m==='export')syncExport();
+}
+
+// ─── gear geometry helpers ─────────────────────────────────
+function geoFromParams(N,m,boreDia,faceW,phi=20){
+  const d=m*N, p=Math.PI*m;
+  const ha=m, hf=1.25*m;
+  const da=d+2*ha, dr=d-2*hf;
+  const rb=(d/2)*Math.cos(phi*Math.PI/180);
+  return {N,m,d,p,ha,hf,da,dr,rb,boreDia,faceW,phi};
+}
+
+// involute XY at parameter t (radians) for base circle radius rb
+function involutePoint(rb,t){
+  return {x:rb*(Math.cos(t)+t*Math.sin(t)), y:rb*(Math.sin(t)-t*Math.cos(t))};
+}
+
+// generate one tooth outline points (involute flank, tip arc, return flank)
+function toothPoints(g, steps=18){
+  const {N,d,da,dr,rb} = g;
+  const r=d/2, ra=da/2, rr=dr/2;
+  const angPitch=2*Math.PI/N;
+  const halfTooth=angPitch/4;
+
+  // involute from base to tip
+  const t_tip=Math.sqrt((ra*ra)/(rb*rb)-1);
+  const pts=[];
+  for(let i=0;i<=steps;i++){
+    const t=t_tip*i/steps;
+    const p=involutePoint(rb,t);
+    const rad=Math.hypot(p.x,p.y);
+    if(rad>=rr&&rad<=ra) pts.push(p);
+  }
+  if(pts.length<2) return [];
+
+  // find angle of first involute point
+  const p0=pts[0];
+  const invStartAng=Math.atan2(p0.y,p0.x);
+  // tooth symmetric offset
+  const rotate=a=>pts.map(p=>({
+    x:p.x*Math.cos(a)-p.y*Math.sin(a),
+    y:p.x*Math.sin(a)+p.y*Math.cos(a)
+  }));
+  const pitchInvAng=Math.atan2(pts[pts.length-1].y,pts[pts.length-1].x);
+  const offset=halfTooth-pitchInvAng;
+  const left=rotate(offset);
+  const right=rotate(offset+angPitch).map(p=>({x:p.x,y:-p.y})).reverse();
+  // root arc between teeth
+  const rootPts=[];
+  const a1=Math.atan2(left[0].y,left[0].x);
+  const a2=Math.atan2(right[right.length-1].y,right[right.length-1].x);
+  for(let i=0;i<=8;i++){
+    const a=a1+(a2-a1)*i/8;
+    rootPts.push({x:rr*Math.cos(a),y:rr*Math.sin(a)});
+  }
+  // tip arc
+  const at1=Math.atan2(left[left.length-1].y,left[left.length-1].x);
+  const at2=Math.atan2(right[0].y,right[0].x);
+  const tipPts=[];
+  for(let i=0;i<=6;i++){
+    const a=at1+(at2-at1)*i/6;
+    tipPts.push({x:ra*Math.cos(a),y:ra*Math.sin(a)});
+  }
+  return [...rootPts,...left,...tipPts,...right];
+}
+
+// full gear profile polygon
+function gearPolygon(g){
+  const all=[];
+  const angPitch=2*Math.PI/g.N;
+  const base=toothPoints(g);
+  if(!base.length) return [];
+  for(let i=0;i<g.N;i++){
+    const ang=i*angPitch;
+    const cos=Math.cos(ang),sin=Math.sin(ang);
+    base.forEach(p=>all.push({x:p.x*cos-p.y*sin, y:p.x*sin+p.y*cos}));
+  }
+  return all;
+}
+
+// ─── RATIO TAB ────────────────────────────────────────────
+function calcRatio(){
+  const n1=parseFloat(document.getElementById('r-n1').value)||1;
+  const n2=parseFloat(document.getElementById('r-n2').value)||1;
+  const rpm=parseFloat(document.getElementById('r-rpm').value)||0;
+  const torq=parseFloat(document.getElementById('r-torque').value)||0;
+  const gr=n2/n1, outRpm=rpm/gr, outTorq=torq*gr;
+  let w='';
+  if(n1<6||n2<6) w='Min. 6 teeth to avoid undercutting';
+  if(gr>10) w='Ratio >10:1 — consider compound gear train';
+  setResults('ratio-results',[
+    {l:'Gear ratio',v:fmt(gr,3)+':1',s:gr>=1?'Speed reduction':'Speed increase',w,ac:'ab'},
+    {l:'Output speed',v:fmt(outRpm,1)+' rpm',s:'ω₂ = ω₁ ÷ GR'},
+    {l:'Theoretical torque',v:fmt(outTorq,2)+' N·m',s:'τ₂ = τ₁ × GR',ac:'at'},
+    {l:'Effective torque',v:fmt(outTorq*.98,2)+' N·m',s:'At η = 0.98'},
+    {l:'Total teeth',v:fmtI(n1+n2)+' T',s:'N₁ + N₂'},
+    {l:'Speed ratio check',v:fmt(n1/n2,4),s:'N₁/N₂'},
+  ]);
+  drawRatioGears(n1,n2);
+}
+
+function drawRatioGears(n1,n2){
+  const canvas=document.getElementById('gear-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const textCol=isDark?'#4a5068':'#9aa0b8';
+  function dg(cx,cy,r,teeth,color,label){
+    const toothH=Math.max(5,r*.16);
+    const toothW=(2*Math.PI*r/teeth)*.42;
+    ctx.beginPath();
+    for(let i=0;i<teeth;i++){
+      const ang=(i/teeth)*2*Math.PI-Math.PI/2;
+      const a1=ang-toothW/(r+toothH),a2=ang+toothW/(r+toothH);
+      const a3=ang-toothW/r*.55,a4=ang+toothW/r*.55;
+      if(i===0) ctx.moveTo(cx+r*Math.cos(a3),cy+r*Math.sin(a3));
+      else ctx.lineTo(cx+r*Math.cos(a3),cy+r*Math.sin(a3));
+      ctx.lineTo(cx+(r+toothH)*Math.cos(a1),cy+(r+toothH)*Math.sin(a1));
+      ctx.lineTo(cx+(r+toothH)*Math.cos(a2),cy+(r+toothH)*Math.sin(a2));
+      ctx.lineTo(cx+r*Math.cos(a4),cy+r*Math.sin(a4));
+    }
+    ctx.closePath();
+    ctx.fillStyle=color+'1a';ctx.fill();
+    ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,r*.22,0,2*Math.PI);
+    ctx.fillStyle=color+'2a';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.stroke();
+    ctx.fillStyle=textCol;ctx.font='11px JetBrains Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(label,cx,cy+r+toothH+15);
+  }
+  const gr=n2/n1;
+  let R1=Math.min(55,Math.max(16,n1*1.6/(1+gr*.25)));
+  let R2=Math.min(55,R1*gr);
+  const sc=Math.min(1,145/(R1+R2));
+  R1*=sc;R2*=sc;
+  const gap=4,cx1=W/2-R2-gap,cx2=W/2+R1+gap,cy=H/2-10;
+  dg(cx1,cy,R1,Math.round(n1),'#378ADD',n1+'T driver');
+  dg(cx2,cy,R2,Math.round(n2),'#1D9E75',n2+'T driven');
+  ctx.setLineDash([3,3]);
+  ctx.strokeStyle=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.08)';
+  ctx.lineWidth=.5;ctx.beginPath();ctx.moveTo(cx1,cy);ctx.lineTo(cx2,cy);ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ─── MODULE TAB ───────────────────────────────────────────
+function onModSel(){
+  const v=document.getElementById('m-module').value;
+  document.getElementById('custom-m-row').style.display=v==='custom'?'flex':'none';
+  calcModule();
+}
+function calcModule(){
+  const sel=document.getElementById('m-module').value;
+  const m=sel==='custom'?(parseFloat(document.getElementById('m-custom').value)||1):parseFloat(sel);
+  const N=parseFloat(document.getElementById('m-teeth').value)||1;
+  const phi=parseFloat(document.getElementById('m-pa').value)||20;
+  const d=m*N,p=Math.PI*m,ha=m,hf=1.25*m;
+  const da=d+2*ha,dr=d-2*hf,rb=(d/2)*Math.cos(phi*Math.PI/180);
+  setResults('module-results',[
+    {l:'Pitch diameter (d)',v:fmt(d)+' mm',s:'m × N',ac:'ab'},
+    {l:'Circular pitch (p)',v:fmt(p,3)+' mm',s:'π × m'},
+    {l:'Addendum (ha)',v:fmt(ha)+' mm',s:'Above pitch circle'},
+    {l:'Dedendum (hf)',v:fmt(hf)+' mm',s:'Below pitch circle'},
+    {l:'Outside diam. (da)',v:fmt(da)+' mm',s:'d + 2ha',ac:'at'},
+    {l:'Root diameter (dr)',v:fmt(dr)+' mm',s:'d − 2hf'},
+    {l:'Base circle radius',v:fmt(rb)+' mm',s:'(d/2)·cos φ'},
+    {l:'Tooth thickness',v:fmt(p/2,3)+' mm',s:'At pitch circle (p/2)'},
+  ]);
+}
+
+// ─── BEVEL TAB ────────────────────────────────────────────
+function calcBevel(){
+  const n1=parseFloat(document.getElementById('b-n1').value)||1;
+  const n2=parseFloat(document.getElementById('b-n2').value)||1;
+  const sigma=parseFloat(document.getElementById('b-shaft').value)||90;
+  const m=parseFloat(document.getElementById('b-module').value)||1;
+  const sigR=sigma*Math.PI/180, gr=n2/n1;
+  const d1r=Math.atan(Math.sin(sigR)/(gr+Math.cos(sigR)))*180/Math.PI;
+  const d2r=sigma-d1r;
+  const d1=m*n1,d2=m*n2;
+  const R=(d1/2)/Math.sin(d1r*Math.PI/180);
+  setResults('bevel-results',[
+    {l:'Gear ratio',v:fmt(gr,3)+':1',s:'N₂ ÷ N₁',ac:'ab'},
+    {l:'Pinion pitch angle (δ₁)',v:fmt(d1r)+'°',s:'From shaft axis'},
+    {l:'Gear pitch angle (δ₂)',v:fmt(d2r)+'°',s:'From shaft axis'},
+    {l:'Pinion pitch diam.',v:fmt(d1)+' mm',s:'m × N₁'},
+    {l:'Gear pitch diam.',v:fmt(d2)+' mm',s:'m × N₂',ac:'at'},
+    {l:'Back-cone radius (R)',v:fmt(R)+' mm',s:'Slant height'},
+    {l:'Max face width',v:fmt(R/3)+' mm',s:'≤ R/3 recommended'},
+    {l:'Total teeth',v:fmtI(n1+n2)+' T',s:'N₁ + N₂'},
+  ]);
+}
+
+// ─── COMPOUND GEARING TAB ─────────────────────────────────
+function updateCompoundStages(){
+  const stages=parseInt(document.getElementById('c-stages').value)||2;
+  const container=document.getElementById('compound-stages-container');
+
+  // preserve any values already entered, so changing the stage count
+  // doesn't wipe out stages the user already configured
+  const existing={};
+  container.querySelectorAll('input[type=number]').forEach(inp=>{existing[inp.id]=inp.value;});
+
+  let html='';
+  for(let i=1;i<=stages;i++){
+    const defA=20+i*10, defB=40+i*20;
+    const valA=existing[`c-n${i}a`]!==undefined?existing[`c-n${i}a`]:defA;
+    const valB=existing[`c-n${i}b`]!==undefined?existing[`c-n${i}b`]:defB;
+    html+=`
+    <div class="card" style="margin-bottom:10px">
+      <div class="slabel">Stage ${i}</div>
+      <div class="field">
+        <label>Driver teeth (N${i}a)</label>
+        <input type="number" id="c-n${i}a" value="${valA}" min="6" max="200" oninput="calcCompound()">
+        <span class="unit">T</span>
+      </div>
+      <div class="field">
+        <label>Driven teeth (N${i}b)</label>
+        <input type="number" id="c-n${i}b" value="${valB}" min="6" max="200" oninput="calcCompound()">
+        <span class="unit">T</span>
+      </div>
+    </div>`;
+  }
+  container.innerHTML=html;
+
+  const subDigits=['','₁','₂','₃','₄'];
+  const terms=[];
+  for(let i=1;i<=stages;i++) terms.push('GR'+subDigits[i]);
+  const formulaEl=document.getElementById('compound-gr-formula');
+  if(formulaEl) formulaEl.textContent='GR_total = '+terms.join(' × ');
+
+  calcCompound();
+}
+
+function calcCompound(){
+  const stages=parseInt(document.getElementById('c-stages').value)||2;
+  const inRpm=parseFloat(document.getElementById('c-rpm').value)||1000;
+  const inTorq=parseFloat(document.getElementById('c-torque').value)||10;
+
+  let totalGr=1, curRpm=inRpm, curTorq=inTorq;
+  const eta=0.98;
+  const stageData=[];
+  let underTeeth=false;
+  const highRatioStages=[];
+
+  for(let i=1;i<=stages;i++){
+    const elA=document.getElementById(`c-n${i}a`);
+    const elB=document.getElementById(`c-n${i}b`);
+    if(!elA||!elB) continue;
+    const nDrv=parseFloat(elA.value)||1;
+    const nDrn=parseFloat(elB.value)||1;
+    const gr=nDrn/nDrv;
+
+    if(nDrv<6||nDrn<6) underTeeth=true;
+    if(gr>10) highRatioStages.push(i);
+
+    totalGr*=gr;
+    curRpm/=gr;
+    curTorq*=gr*eta;
+
+    stageData.push({stage:i,n1:nDrv,n2:nDrn,gr,outRpm:curRpm,outTorq:curTorq});
+  }
+
+  let topWarn='';
+  if(underTeeth) topWarn='Min. 6 teeth to avoid undercutting';
+  else if(highRatioStages.length) topWarn=`Stage ${highRatioStages.join(', ')} >10:1 — spread ratio across more stages`;
+
+  const supDigits=['','¹','²','³','⁴'];
+  const cumEff=Math.pow(eta,stages)*100;
+
+  const resItems=[
+    {l:'Total ratio',v:fmt(totalGr,3)+':1',s:stages>1?`Cascaded over ${stages} stages`:'Single stage',ac:'ab',w:topWarn},
+    {l:'Final output RPM',v:fmt(curRpm,1)+' rpm',s:'ω_out = ω_in ÷ GR_total'},
+    {l:'Final output torque',v:fmt(curTorq,2)+' N·m',s:`η${supDigits[stages]||''} = ${fmt(cumEff,1)}%`,ac:'at'},
+  ];
+
+  stageData.forEach(s=>{
+    resItems.push({
+      l:`Stage ${s.stage}`,
+      v:fmt(s.gr,2)+':1',
+      s:`${s.n1}T→${s.n2}T · ${fmt(s.outRpm,0)} rpm · ${fmt(s.outTorq,1)} N·m`,
+      w: s.gr>10?'High ratio for a single mesh':''
+    });
+  });
+
+  setResults('compound-results',resItems);
+  drawCompoundTrain(stageData);
+}
+
+function drawCompoundTrain(stageData){
+  const canvas=document.getElementById('compound-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const textCol=isDark?'#4a5068':'#9aa0b8';
+  const shaftCol=isDark?'#454b66':'#bbb';
+  const colors=['#378ADD','#1D9E75','#EF9F27','#C027FF'];
+  const cy=H/2-18;
+
+  // returns the gear's left/right pixel edges so connector lines can be
+  // positioned exactly, instead of guessed with fixed offsets
+  function drawGearSmall(cx,r,teeth,color,label){
+    const toothH=Math.max(4,r*.16);
+    const renderTeeth=Math.min(Math.max(Math.round(teeth),6),32); // cap so 100+ teeth don't render as noise at this scale
+    const toothW=(2*Math.PI*r/renderTeeth)*.42;
+    ctx.beginPath();
+    for(let i=0;i<renderTeeth;i++){
+      const ang=(i/renderTeeth)*2*Math.PI-Math.PI/2;
+      const a1=ang-toothW/(r+toothH), a2=ang+toothW/(r+toothH);
+      const a3=ang-toothW/r*.55, a4=ang+toothW/r*.55;
+      if(i===0) ctx.moveTo(cx+r*Math.cos(a3),cy+r*Math.sin(a3));
+      else ctx.lineTo(cx+r*Math.cos(a3),cy+r*Math.sin(a3));
+      ctx.lineTo(cx+(r+toothH)*Math.cos(a1),cy+(r+toothH)*Math.sin(a1));
+      ctx.lineTo(cx+(r+toothH)*Math.cos(a2),cy+(r+toothH)*Math.sin(a2));
+      ctx.lineTo(cx+r*Math.cos(a4),cy+r*Math.sin(a4));
+    }
+    ctx.closePath();
+    ctx.fillStyle=color+'14';ctx.fill();
+    ctx.strokeStyle=color;ctx.lineWidth=1;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,r*.22,0,2*Math.PI);
+    ctx.fillStyle=color+'22';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=.8;ctx.stroke();
+    ctx.fillStyle=textCol;ctx.font='8px JetBrains Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(label,cx,cy+r+toothH+11);
+    return {left:cx-r-toothH, right:cx+r+toothH};
+  }
+
+  const n=stageData.length;
+  const gap=6;
+
+  if(n===1){
+    // single stage: centre the pair in the canvas rather than left-aligning
+    const s=stageData[0];
+    const r1=Math.max(9,Math.min(28,s.n1*0.55));
+    const r2=Math.max(9,Math.min(28,s.n2*0.55));
+    const cx1=W/2-(r1+r2+gap)/2;
+    const cx2=cx1+r1+r2+gap;
+    const e1=drawGearSmall(cx1,r1,s.n1,colors[0],`${s.n1}T`);
+    const e2=drawGearSmall(cx2,r2,s.n2,colors[0],`${s.n2}T`);
+    ctx.setLineDash([2,2]);
+    ctx.strokeStyle=colors[0];ctx.lineWidth=.6;ctx.globalAlpha=.5;
+    ctx.beginPath();ctx.moveTo(e1.right,cy);ctx.lineTo(e2.left,cy);ctx.stroke();
+    ctx.globalAlpha=1;ctx.setLineDash([]);
+    ctx.fillStyle=textCol;ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(`${fmt(s.gr,2)}:1`,(cx1+cx2)/2,cy+Math.max(r1,r2)+38);
+    return;
+  }
+
+  // multi-stage: divide canvas into equal slots so spacing scales with
+  // however many stages are present (2, 3, or 4)
+  const margin=24;
+  const slotW=(W-margin*2)/n;
+  const maxR=Math.min(20,slotW*0.22);
+  const edges=[];
+
+  stageData.forEach((s,idx)=>{
+    const slotStart=margin+idx*slotW;
+    const r1=Math.max(8,Math.min(maxR,s.n1*0.5));
+    const r2=Math.max(8,Math.min(maxR,s.n2*0.5));
+    const cx1=slotStart+slotW*0.26;
+    const cx2=cx1+r1+r2+gap;
+    const color=colors[idx%colors.length];
+
+    const e1=drawGearSmall(cx1,r1,s.n1,color,`${s.n1}T`);
+    const e2=drawGearSmall(cx2,r2,s.n2,color,`${s.n2}T`);
+
+    // dashed = tooth mesh contact between the two gears of this stage
+    ctx.setLineDash([2,2]);
+    ctx.strokeStyle=color;ctx.lineWidth=.6;ctx.globalAlpha=.5;
+    ctx.beginPath();ctx.moveTo(e1.right,cy);ctx.lineTo(e2.left,cy);ctx.stroke();
+    ctx.globalAlpha=1;ctx.setLineDash([]);
+
+    ctx.fillStyle=textCol;ctx.font='8.5px JetBrains Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(`${fmt(s.gr,2)}:1`,(cx1+cx2)/2,cy+maxR+34);
+
+    edges.push({left:e1.left,right:e2.right});
+  });
+
+  // solid = physical shaft coupling the driven gear of one stage to the
+  // driver gear of the next; drawn from the exact rendered edges so it
+  // always reaches, regardless of gear size
+  for(let idx=0;idx<n-1;idx++){
+    ctx.strokeStyle=shaftCol;
+    ctx.lineWidth=2.5;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(edges[idx].right,cy);
+    ctx.lineTo(edges[idx+1].left,cy);
+    ctx.stroke();
+  }
+}
+
+// ─── DRAWING TAB ─────────────────────────────────────────
+function getDrawParams(){
+  return {
+    N:Math.round(parseFloat(document.getElementById('d-teeth').value)||24),
+    m:parseFloat(document.getElementById('d-module').value)||2,
+    bore:parseFloat(document.getElementById('d-bore').value)||20,
+    faceW:parseFloat(document.getElementById('d-facewidth').value)||14,
+    phi:parseFloat(document.getElementById('d-pa').value)||20,
+    view:document.getElementById('d-view').value,
+    keyway:document.getElementById('d-keyway').value==='yes',
+  };
+}
+
+function renderDrawing(){
+  const p=getDrawParams();
+  const g=geoFromParams(p.N,p.m,p.bore,p.faceW,p.phi);
+  const canvas=document.getElementById('draw-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // white background
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,W,H);
+
+  // title block
+  drawTitleBlock(ctx,W,H,g,p);
+
+  const bothView=p.view==='both';
+  const sectionView=p.view==='section';
+
+  if(bothView){
+    // front view left, section view right
+    drawFrontView(ctx, W*0.27, H*0.48, Math.min(W*0.36,H*0.72)/2 * 0.9, g, p);
+    drawSectionView(ctx, W*0.72, H*0.48, Math.min(W*0.36,H*0.60)/2 * 0.9, g, p);
+    // projection lines
+    ctx.save();
+    ctx.strokeStyle='#ccc';ctx.lineWidth=.5;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(W*0.48,H*0.48);ctx.lineTo(W*0.52,H*0.48);ctx.stroke();
+    ctx.restore();
+  } else if(sectionView){
+    drawSectionView(ctx,W*0.5,H*0.47,Math.min(W*0.62,H*0.70)/2*0.85,g,p);
+  } else {
+    drawFrontView(ctx,W*0.5,H*0.47,Math.min(W*0.60,H*0.70)/2*0.85,g,p);
+  }
+
+  // update info bar
+  document.getElementById('draw-info').innerHTML=
+    `<span>d = <b>${fmt(g.d)} mm</b></span>`+
+    `<span>da = <b>${fmt(g.da)} mm</b></span>`+
+    `<span>dr = <b>${fmt(g.dr)} mm</b></span>`+
+    `<span>bore = <b>${fmt(g.boreDia)} mm</b></span>`+
+    `<span>b = <b>${fmt(g.faceW)} mm</b></span>`;
+}
+
+function drawFrontView(ctx,cx,cy,scale,g,p){
+  // scale so pitch diam fills 'scale' radius
+  const s=scale/(g.da/2+2);
+  const poly=gearPolygon(g);
+  if(!poly.length) return;
+
+  ctx.save();
+  ctx.translate(cx,cy);
+
+  // root circle (dashed)
+  ctx.beginPath();ctx.arc(0,0,g.dr/2*s,0,2*Math.PI);
+  ctx.strokeStyle='#aaa';ctx.lineWidth=.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+
+  // pitch circle (chain dash)
+  ctx.beginPath();ctx.arc(0,0,g.d/2*s,0,2*Math.PI);
+  ctx.strokeStyle='#999';ctx.lineWidth=.7;ctx.setLineDash([8,3,2,3]);ctx.stroke();ctx.setLineDash([]);
+
+  // gear outline
+  ctx.beginPath();
+  poly.forEach((pt,i)=>{
+    if(i===0) ctx.moveTo(pt.x*s,pt.y*s);
+    else ctx.lineTo(pt.x*s,pt.y*s);
+  });
+  ctx.closePath();
+  ctx.fillStyle='rgba(55,138,221,0.06)';ctx.fill();
+  ctx.strokeStyle='#1a1d2e';ctx.lineWidth=1.2;ctx.stroke();
+
+  // bore
+  ctx.beginPath();ctx.arc(0,0,g.boreDia/2*s,0,2*Math.PI);
+  ctx.fillStyle='#fff';ctx.fill();
+  ctx.strokeStyle='#1a1d2e';ctx.lineWidth=1.2;ctx.stroke();
+
+  // keyway
+  if(p.keyway){
+    const bh=g.m*.4, bw=g.m*1.2;
+    const ky=-g.boreDia/2*s-bh*s;
+    ctx.fillStyle='#fff';
+    ctx.fillRect(-bw/2*s,ky,-0+bw*s,bh*s+1);
+    ctx.strokeStyle='#1a1d2e';ctx.lineWidth=.8;
+    ctx.strokeRect(-bw/2*s,ky,bw*s,bh*s);
+  }
+
+  // centre cross
+  ctx.strokeStyle='#888';ctx.lineWidth=.5;ctx.setLineDash([5,3]);
+  ctx.beginPath();ctx.moveTo(-scale*.3,0);ctx.lineTo(scale*.3,0);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,-scale*.3);ctx.lineTo(0,scale*.3);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // dimension lines
+  drawDimension(ctx, -g.da/2*s-8, 0, g.da/2*s+8, 0, `⌀${fmt(g.da)} mm`, 'h', scale*1.28);
+  drawDimension(ctx, 0, -g.d/2*s-5, 0, g.d/2*s+5, `⌀${fmt(g.d)} mm`, 'v', -scale*1.18);
+
+  // addendum label
+  ctx.font='9px JetBrains Mono,monospace';ctx.fillStyle='#888';ctx.textAlign='center';
+  ctx.fillText('OD = ⌀'+fmt(g.da),0,g.da/2*s+16);
+
+  ctx.restore();
+}
+
+function drawSectionView(ctx,cx,cy,scale,g,p){
+  const s=scale/(g.da/2+2);
+  const hw=g.da/2*s, boreR=g.boreDia/2*s;
+  const fw=g.faceW*s;
+
+  ctx.save();
+  ctx.translate(cx,cy);
+
+  // outer rectangle (OD)
+  ctx.beginPath();
+  ctx.rect(-hw,-fw/2,hw*2,fw);
+  ctx.fillStyle='rgba(55,138,221,0.07)';ctx.fill();
+  ctx.strokeStyle='#1a1d2e';ctx.lineWidth=1.2;ctx.stroke();
+
+  // bore hole
+  ctx.beginPath();
+  ctx.rect(-boreR,-fw/2,boreR*2,fw);
+  ctx.fillStyle='#fff';ctx.fill();
+  ctx.strokeStyle='#1a1d2e';ctx.lineWidth=1.2;ctx.stroke();
+
+  // pitch circle line
+  const pd=g.d/2*s;
+  ctx.beginPath();ctx.moveTo(-pd,-fw/2-4);ctx.lineTo(-pd,fw/2+4);
+  ctx.strokeStyle='#aaa';ctx.lineWidth=.6;ctx.setLineDash([6,3,2,3]);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pd,-fw/2-4);ctx.lineTo(pd,fw/2+4);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // hatch (section fill)
+  ctx.save();
+  ctx.strokeStyle='rgba(55,138,221,0.2)';ctx.lineWidth=.5;
+  for(let x=-hw;x<=hw;x+=6){
+    if(Math.abs(x)>boreR){
+      ctx.beginPath();ctx.moveTo(x,-fw/2);ctx.lineTo(x,fw/2);ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // centre line
+  ctx.strokeStyle='#888';ctx.lineWidth=.5;ctx.setLineDash([5,3]);
+  ctx.beginPath();ctx.moveTo(-hw-10,0);ctx.lineTo(hw+10,0);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // keyway in section
+  if(p.keyway){
+    const bh=g.m*.4,bw=g.m*1.2;
+    ctx.fillStyle='#fff';
+    ctx.fillRect(-bw/2*s,-fw/2,bw*s,-bh*s);
+    ctx.strokeStyle='#1a1d2e';ctx.lineWidth=.8;
+    ctx.strokeRect(-bw/2*s,-fw/2,bw*s,-bh*s);
+  }
+
+  // dimension: OD
+  drawDimension(ctx,-hw-6,0,hw+6,0,`⌀${fmt(g.da)} mm`,'h',fw/2+26);
+  // dimension: bore
+  drawDimension(ctx,-boreR,0,boreR,0,`⌀${fmt(g.boreDia)} mm`,'h',-fw/2-14);
+  // dimension: face width
+  drawDimension(ctx,0,-fw/2,0,fw/2,`${fmt(g.faceW)} mm`,'v',hw+20);
+
+  ctx.restore();
+}
+
+function drawDimension(ctx,x1,y1,x2,y2,label,dir,offset){
+  ctx.save();
+  ctx.strokeStyle='#555';ctx.fillStyle='#333';
+  ctx.lineWidth=.6;ctx.font='9px JetBrains Mono,monospace';
+  ctx.setLineDash([]);
+
+  if(dir==='h'){
+    const y=y1+offset;
+    // ext lines
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x1,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2,y);ctx.stroke();
+    // dim line with arrows
+    ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+    arrow(ctx,x1,y,1,0); arrow(ctx,x2,y,-1,0);
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='#444';
+    ctx.clearRect((x1+x2)/2-26,y-6,52,12);
+    ctx.fillText(label,(x1+x2)/2,y);
+  } else {
+    const x=x1+offset;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x,y1);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x,y2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y1);ctx.lineTo(x,y2);ctx.stroke();
+    arrow(ctx,x,y1,0,1); arrow(ctx,x,y2,0,-1);
+    ctx.save();ctx.translate(x,(y1+y2)/2);ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#444';
+    ctx.clearRect(-26,-6,52,12);
+    ctx.fillText(label,0,0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function arrow(ctx,x,y,dx,dy){
+  const size=5;
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+  ctx.lineTo(x-size*dx-size*.4*dy, y-size*dy-size*.4*dx);
+  ctx.lineTo(x-size*dx+size*.4*dy, y-size*dy+size*.4*dx);
+  ctx.closePath();
+  ctx.fillStyle='#555';ctx.fill();
+}
+
+function drawTitleBlock(ctx,W,H,g,p){
+  const bx=0,by=H-52,bw=W,bh=52;
+  ctx.fillStyle='#f8f9fc';ctx.fillRect(bx,by,bw,bh);
+  ctx.strokeStyle='#ccc';ctx.lineWidth=.5;
+  ctx.strokeRect(bx,by,bw,bh);
+  // vertical dividers
+  [W*0.32,W*0.56,W*0.75].forEach(x=>{
+    ctx.beginPath();ctx.moveTo(x,by);ctx.lineTo(x,H);ctx.stroke();
+  });
+  ctx.beginPath();ctx.moveTo(0,by+26);ctx.lineTo(W,by+26);ctx.stroke();
+  ctx.font='8px JetBrains Mono,monospace';ctx.fillStyle='#999';ctx.textBaseline='top';
+  [[4,by+2,'PART NAME'],[4,by+28,'MATERIAL'],[W*.32+4,by+2,'MODULE (m)'],[W*.32+4,by+28,'TEETH (N)'],
+   [W*.56+4,by+2,'PITCH DIA'],[W*.56+4,by+28,'OUTSIDE DIA'],[W*.75+4,by+2,'FACE WIDTH'],[W*.75+4,by+28,'BORE DIA']]
+   .forEach(([x,y,t])=>{ctx.fillStyle='#aaa';ctx.fillText(t,x,y)});
+  ctx.font='9.5px JetBrains Mono,monospace';ctx.fillStyle='#1a1d2e';
+  [[4,by+14,'Spur Gear'],[4,by+40,'Steel / POM'],[W*.32+4,by+14,g.m+' mm'],[W*.32+4,by+40,g.N+' T'],
+   [W*.56+4,by+14,fmt(g.d)+' mm'],[W*.56+4,by+40,fmt(g.da)+' mm'],
+   [W*.75+4,by+14,fmt(g.faceW)+' mm'],[W*.75+4,by+40,fmt(g.boreDia)+' mm']]
+   .forEach(([x,y,t])=>{ctx.fillStyle='#1a1d2e';ctx.fillText(t,x,y)});
+  // border
+  ctx.strokeStyle='#999';ctx.lineWidth=1;
+  ctx.strokeRect(2,2,W-4,H-4);
+}
+
+// ─── EXPORT functions ─────────────────────────────────────
+function getExportGeo(){
+  const N=Math.round(parseFloat(document.getElementById('e-teeth').value)||24);
+  const m=parseFloat(document.getElementById('e-module').value)||2;
+  const bore=parseFloat(document.getElementById('e-bore').value)||20;
+  const faceW=parseFloat(document.getElementById('e-facewidth').value)||14;
+  return geoFromParams(N,m,bore,faceW,20);
+}
+
+function syncExport(){
+  // keep drawing tab in sync
+  ['teeth','module','bore','facewidth'].forEach(k=>{
+    const ex=document.getElementById('e-'+k);
+    const dr=document.getElementById('d-'+k);
+    if(ex&&dr) dr.value=ex.value;
+  });
+}
+
+function exportDXF(){
+  const g=getExportGeo();
+  const poly=gearPolygon(g);
+  if(!poly.length){toast('Too few teeth for polygon');return;}
+  let lines=[];
+  lines.push('0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC');
+  lines.push('0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n4');
+  ['GEAR_PROFILE','PITCH_CIRCLE','BORE','DIMENSIONS'].forEach((n,i)=>{
+    lines.push(`0\nLAYER\n2\n${n}\n70\n0\n62\n${[7,1,3,2][i]}\n6\nCONTINUOUS`);
+  });
+  lines.push('0\nENDTAB\n0\nENDSEC');
+  lines.push('0\nSECTION\n2\nENTITIES');
+
+  // gear polyline
+  lines.push('0\nPOLYLINE\n8\nGEAR_PROFILE\n66\n1\n70\n1');
+  poly.forEach(pt=>{lines.push(`0\nVERTEX\n8\nGEAR_PROFILE\n10\n${pt.x.toFixed(4)}\n20\n${pt.y.toFixed(4)}\n30\n0.0`);});
+  lines.push('0\nSEQEND');
+
+  // pitch circle
+  lines.push(`0\nCIRCLE\n8\nPITCH_CIRCLE\n10\n0.0\n20\n0.0\n30\n0.0\n40\n${(g.d/2).toFixed(4)}`);
+
+  // bore circle
+  lines.push(`0\nCIRCLE\n8\nBORE\n10\n0.0\n20\n0.0\n30\n0.0\n40\n${(g.boreDia/2).toFixed(4)}`);
+
+  // dimension OD
+  const da2=g.da/2;
+  lines.push(`0\nDIMENSION\n8\nDIMENSIONS\n1\n⌀${fmt(g.da)} mm\n10\n0.0\n20\n${(da2+8).toFixed(3)}\n30\n0.0\n13\n${(-da2).toFixed(3)}\n23\n${(da2+8).toFixed(3)}\n33\n0.0\n14\n${da2.toFixed(3)}\n24\n${(da2+8).toFixed(3)}\n34\n0.0\n70\n1`);
+
+  lines.push('0\nENDSEC\n0\nEOF');
+  download(`gear_N${g.N}_m${g.m}.dxf`, lines.join('\n'));
+  toast('DXF downloaded');
+}
+
+function exportSVG(){
+  const g=getExportGeo();
+  const poly=gearPolygon(g);
+  if(!poly.length){toast('Too few teeth');return;}
+  const pad=8;
+  const R=g.da/2+pad;
+  const size=R*2;
+  const cx=R,cy=R;
+  const pts=poly.map(p=>`${(cx+p.x).toFixed(3)},${(cy+p.y).toFixed(3)}`).join(' ');
+  const svg=`<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${size.toFixed(1)}mm" height="${size.toFixed(1)}mm" viewBox="0 0 ${size.toFixed(2)} ${size.toFixed(2)}">
+  <title>Spur Gear N=${g.N} m=${g.m}</title>
+  <desc>Pitch dia=${fmt(g.d)}mm  OD=${fmt(g.da)}mm  Bore=${fmt(g.boreDia)}mm</desc>
+  <!-- Pitch circle -->
+  <circle cx="${cx}" cy="${cy}" r="${(g.d/2).toFixed(3)}" fill="none" stroke="#aaa" stroke-width="0.3" stroke-dasharray="3,2"/>
+  <!-- Root circle -->
+  <circle cx="${cx}" cy="${cy}" r="${(g.dr/2).toFixed(3)}" fill="none" stroke="#ccc" stroke-width="0.2" stroke-dasharray="2,2"/>
+  <!-- Gear outline -->
+  <polygon points="${pts}" fill="rgba(55,138,221,0.08)" stroke="#1a1d2e" stroke-width="0.4" stroke-linejoin="round"/>
+  <!-- Bore -->
+  <circle cx="${cx}" cy="${cy}" r="${(g.boreDia/2).toFixed(3)}" fill="white" stroke="#1a1d2e" stroke-width="0.4"/>
+  <!-- Centre cross -->
+  <line x1="${(cx-4).toFixed(1)}" y1="${cy}" x2="${(cx+4).toFixed(1)}" y2="${cy}" stroke="#888" stroke-width="0.2"/>
+  <line x1="${cx}" y1="${(cy-4).toFixed(1)}" x2="${cx}" y2="${(cy+4).toFixed(1)}" stroke="#888" stroke-width="0.2"/>
+</svg>`;
+  download(`gear_N${g.N}_m${g.m}.svg`,svg,'image/svg+xml');
+  toast('SVG downloaded');
+}
+
+function exportNC(){
+  const g=getExportGeo();
+  const OD=g.da, ID=g.boreDia, L=g.faceW;
+  const blank_dia=OD+4, blank_len=L+3;
+  const nc=`%
+O0001 (SPUR GEAR BLANK - N=${g.N} M=${g.m})
+(OD=${fmt(g.da)}mm  BORE=${fmt(g.boreDia)}mm  FACE=${fmt(g.faceW)}mm)
+(GENERATED BY GEAR TEETH CALCULATOR)
+G21 G17 G40 G49 G80 G90
+G28 U0 W0
+T0101 (ROUGHING TOOL)
+M3 S800 F0.2
+G0 X${(blank_dia+2).toFixed(2)} Z2.0
+; --- FACE BLANK ---
+G1 Z0
+G1 X-1.6 F0.15
+G0 Z2.0
+; --- ROUGH OD TO PITCH DIA ---
+G71 U1.0 R0.5
+G71 P10 Q20 U0.4 W0.1 F0.2
+N10 G0 X${(OD-2).toFixed(3)}
+G1 Z${(-L).toFixed(3)}
+N20 G1 X${(blank_dia+1).toFixed(3)}
+; --- FINISH OD ---
+T0202 (FINISH TOOL)
+M3 S1200 F0.08
+G0 X${(OD+2).toFixed(2)} Z2.0
+G1 Z0
+G1 X${OD.toFixed(3)} Z-0.5
+G1 Z${(-L).toFixed(3)}
+G1 X${(OD+2).toFixed(3)}
+; --- DRILL/BORE ID ---
+T0303 (BORING BAR)
+M3 S600 F0.1
+G0 X0 Z5.0
+G74 R0.5
+G74 Z${(-L-2).toFixed(3)} Q${Math.round(ID/2*500)} F0.08
+; --- FINISH BORE ---
+G76 P010060 Q50 R0.05
+G76 X${ID.toFixed(3)} Z${(-L).toFixed(3)} P${Math.round(0.6495*1000)} Q200 F1.0
+G0 X150 Z150
+M5
+M30
+%`;
+  download(`gear_N${g.N}_m${g.m}.nc`,nc);
+  toast('NC G-code downloaded');
+}
+
+function exportSTL(){
+  const g=getExportGeo();
+  const poly=gearPolygon(g);
+  if(!poly.length){toast('Too few teeth');return;}
+  const L=g.faceW, Z0=0, Z1=L;
+  const triangles=[];
+
+  function tri(v1,v2,v3,nx,ny,nz){
+    triangles.push(`  facet normal ${nx.toFixed(4)} ${ny.toFixed(4)} ${nz.toFixed(4)}`);
+    triangles.push('    outer loop');
+    [v1,v2,v3].forEach(v=>triangles.push(`      vertex ${v[0].toFixed(4)} ${v[1].toFixed(4)} ${v[2].toFixed(4)}`));
+    triangles.push('    endloop\n  endfacet');
+  }
+
+  // front face (z=0) and back face (z=L) as fan from centre
+  for(let i=0;i<poly.length;i++){
+    const a=poly[i],b=poly[(i+1)%poly.length];
+    tri([0,0,Z0],[b.x,b.y,Z0],[a.x,a.y,Z0],0,0,-1);
+    tri([0,0,Z1],[a.x,a.y,Z1],[b.x,b.y,Z1],0,0,1);
+    // side wall
+    const nx=(a.x+b.x)/2, ny=(a.y+b.y)/2, len=Math.hypot(nx,ny)||1;
+    tri([a.x,a.y,Z0],[a.x,a.y,Z1],[b.x,b.y,Z1],nx/len,ny/len,0);
+    tri([a.x,a.y,Z0],[b.x,b.y,Z1],[b.x,b.y,Z0],nx/len,ny/len,0);
+  }
+
+  // bore cutout approximation (cylinder removal as triangles)
+  const boreR=g.boreDia/2, boreSegs=48;
+  for(let i=0;i<boreSegs;i++){
+    const a1=i/boreSegs*2*Math.PI, a2=(i+1)/boreSegs*2*Math.PI;
+    const x1=boreR*Math.cos(a1),y1=boreR*Math.sin(a1);
+    const x2=boreR*Math.cos(a2),y2=boreR*Math.sin(a2);
+    const nx=-(x1+x2)/2/boreR, ny=-(y1+y2)/2/boreR;
+    tri([x1,y1,Z0],[x2,y2,Z0],[x2,y2,Z1],nx,ny,0);
+    tri([x1,y1,Z0],[x2,y2,Z1],[x1,y1,Z1],nx,ny,0);
+  }
+
+  const stl=`solid gear_N${g.N}_m${g.m}\n${triangles.join('\n')}\nendsolid gear_N${g.N}_m${g.m}`;
+  download(`gear_N${g.N}_m${g.m}.stl`,stl);
+  toast('STL downloaded');
+}
+
+function exportSTEP(){
+  const g=getExportGeo();
+  const da2=(g.da/2).toFixed(4), d2=(g.d/2).toFixed(4);
+  const bore2=(g.boreDia/2).toFixed(4), L=g.faceW.toFixed(4);
+  const now=new Date().toISOString().split('T')[0];
+  const step=`ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('Spur Gear N=${g.N} m=${g.m} - Generated by Gear Teeth Calculator'),'2;1');
+FILE_NAME('gear_N${g.N}_m${g.m}.stp','${now}',(''),(''),'Gear Teeth Calculator','','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 3 1 1 1 }'));
+ENDSEC;
+DATA;
+/* Gear parameters: N=${g.N}, m=${g.m}, d=${fmt(g.d)}, da=${fmt(g.da)}, dr=${fmt(g.dr)}, bore=${fmt(g.boreDia)}, face=${fmt(g.faceW)} */
+/* NOTE: This STEP file defines the gear as a parametric cylinder approximation. */
+/* For full tooth geometry, import the DXF profile and extrude in your CAD package. */
+#1=APPLICATION_CONTEXT('AUTOMOTIVE_DESIGN');
+#2=APPLICATION_PROTOCOL_DEFINITION('','AUTOMOTIVE_DESIGN',2010,#1);
+#3=PRODUCT_CONTEXT('',#1,'MECHANICAL');
+#4=PRODUCT('SPUR_GEAR_N${g.N}_M${g.m}','Spur Gear N=${g.N} m=${g.m}','',(#3));
+#5=PRODUCT_DEFINITION_CONTEXT('design',#1,'design');
+#6=PRODUCT_DEFINITION_FORMATION('','',#4);
+#7=PRODUCT_DEFINITION('design','',#6,#5);
+#8=PRODUCT_RELATED_PRODUCT_CATEGORY('part',$,(#4));
+/* Coordinate system */
+#10=CARTESIAN_POINT('Origin',(0.,0.,0.));
+#11=DIRECTION('Z_DIR',(0.,0.,1.));
+#12=DIRECTION('X_DIR',(1.,0.,0.));
+#13=AXIS2_PLACEMENT_3D('',#10,#11,#12);
+/* Outside cylinder (OD) */
+#20=CYLINDRICAL_SURFACE('OD',#13,${da2});
+/* Pitch cylinder */
+#21=CYLINDRICAL_SURFACE('PCD',#13,${d2});
+/* Bore cylinder */
+#22=CYLINDRICAL_SURFACE('BORE',#13,${bore2});
+/* Face planes */
+#30=CARTESIAN_POINT('FaceOriginFront',(0.,0.,0.));
+#31=AXIS2_PLACEMENT_3D('',#30,#11,#12);
+#32=PLANE('FrontFace',#31);
+#33=CARTESIAN_POINT('FaceOriginBack',(0.,0.,${L}));
+#34=AXIS2_PLACEMENT_3D('',#33,#11,#12);
+#35=PLANE('BackFace',#34);
+/* Gear properties (for downstream parametric use) */
+#40=PROPERTY_DEFINITION('Module','${g.m}mm',#7);
+#41=PROPERTY_DEFINITION('Number_of_teeth','${g.N}',#7);
+#42=PROPERTY_DEFINITION('Pitch_diameter','${fmt(g.d)}mm',#7);
+#43=PROPERTY_DEFINITION('Outside_diameter','${fmt(g.da)}mm',#7);
+#44=PROPERTY_DEFINITION('Root_diameter','${fmt(g.dr)}mm',#7);
+#45=PROPERTY_DEFINITION('Bore_diameter','${fmt(g.boreDia)}mm',#7);
+#46=PROPERTY_DEFINITION('Face_width','${fmt(g.faceW)}mm',#7);
+#47=PROPERTY_DEFINITION('Pressure_angle','${g.phi}deg',#7);
+ENDSEC;
+END-ISO-10303-21;`;
+  download(`gear_N${g.N}_m${g.m}.stp`,step);
+  toast('STEP downloaded');
+}
+
+function exportCSV(){
+  const g=getExportGeo();
+  const rows=['x_mm,y_mm,angle_deg,radius_mm,zone'];
+  const poly=gearPolygon(g);
+  if(!poly.length){toast('Too few teeth');return;}
+  poly.forEach(p=>{
+    const r=Math.hypot(p.x,p.y);
+    const ang=(Math.atan2(p.y,p.x)*180/Math.PI+360)%360;
+    let zone='flank';
+    if(r>=g.da/2-0.05) zone='tip';
+    else if(r<=g.dr/2+0.05) zone='root';
+    rows.push(`${p.x.toFixed(4)},${p.y.toFixed(4)},${ang.toFixed(3)},${r.toFixed(4)},${zone}`);
+  });
+  download(`gear_N${g.N}_m${g.m}_profile.csv`,rows.join('\n'),'text/csv');
+  toast('CSV downloaded');
+}
+
+// ─── STRESS & FATIGUE TAB ─────────────────────────────────
+
+const MATS={
+  'ci20':  {n:'Cast Iron Gr20',      E:100e3,nu:0.26,sF:70, sH:350 },
+  'ci40':  {n:'Cast Iron Gr40',      E:110e3,nu:0.26,sF:105,sH:420 },
+  'cs160': {n:'Carbon Steel 160HB',  E:207e3,nu:0.30,sF:158,sH:520 },
+  'cs180': {n:'Carbon Steel 180HB',  E:207e3,nu:0.30,sF:186,sH:580 },
+  'cs250': {n:'Carbon Steel 250HB',  E:207e3,nu:0.30,sF:248,sH:690 },
+  'cs300': {n:'Carbon Steel 300HB',  E:207e3,nu:0.30,sF:277,sH:785 },
+  'as350': {n:'Alloy Steel 350HB',   E:207e3,nu:0.30,sF:315,sH:900 },
+  'ascase':{n:'Alloy Steel (case-hrd)',E:207e3,nu:0.30,sF:380,sH:1400},
+  'asnitr':{n:'Alloy Steel (nitrided)',E:207e3,nu:0.30,sF:430,sH:1050},
+  'bronze':{n:'Aluminium Bronze',    E:110e3,nu:0.34,sF:96, sH:390 },
+  'nylon': {n:'Nylon 66 (dry)',      E:3.2e3,nu:0.40,sF:35, sH:95  },
+  'pom':   {n:'Acetal / POM (dry)',  E:3.2e3,nu:0.40,sF:42, sH:110 },
+};
+
+function matOpts(sel){
+  return Object.entries(MATS).map(([k,v])=>
+    `<option value="${k}" ${k===sel?'selected':''}>${v.n} — &sigma;F ${v.sF} / &sigma;H ${v.sH} MPa</option>`
+  ).join('');
+}
+
+// Lewis form factor Y — Shigley Table 14-2 (interpolated)
+function lewisY(N,phi){
+  const Ns=[12,13,14,15,16,17,18,19,20,22,24,26,28,30,34,38,43,50,60,75,100,150,300,1000];
+  const Y20=[0.245,0.261,0.277,0.290,0.296,0.302,0.308,0.314,0.320,0.330,
+             0.340,0.348,0.354,0.359,0.371,0.383,0.396,0.408,0.421,0.434,
+             0.446,0.459,0.471,0.484];
+  const Y14=[0.197,0.214,0.226,0.236,0.245,0.253,0.261,0.268,0.276,0.290,
+             0.302,0.312,0.322,0.330,0.344,0.356,0.366,0.378,0.390,0.402,
+             0.415,0.429,0.443,0.456];
+  const Y25=[0.271,0.289,0.302,0.316,0.322,0.328,0.334,0.340,0.346,0.354,
+             0.363,0.371,0.377,0.384,0.396,0.403,0.411,0.422,0.431,0.441,
+             0.451,0.462,0.474,0.484];
+  const Yt=phi<17?Y14:(phi>22?Y25:Y20);
+  const n=Math.max(N,Ns[0]);
+  for(let i=0;i<Ns.length-1;i++){
+    if(n<=Ns[i+1]){
+      const t=(n-Ns[i])/(Ns[i+1]-Ns[i]);
+      return Yt[i]+t*(Yt[i+1]-Yt[i]);
+    }
+  }
+  return Yt[Yt.length-1];
+}
+
+// Contact ratio — spur gears, standard centre distance (module units cancel)
+function contRatio(N1,N2,phi){
+  const r=phi*Math.PI/180,c=Math.cos(r),s=Math.sin(r);
+  const ra1=N1/2+1,rb1=N1*c/2,ra2=N2/2+1,rb2=N2*c/2;
+  return Math.max(1.01,
+    (Math.sqrt(ra1*ra1-rb1*rb1)+Math.sqrt(ra2*ra2-rb2*rb2)-(N1+N2)/2*s)/(Math.PI*c));
+}
+
+// Elasticity factor ZE (MPa^0.5) from Hertz contact theory
+function ZEfac(m1,m2){
+  return Math.sqrt(1/(Math.PI*((1-m1.nu*m1.nu)/m1.E+(1-m2.nu*m2.nu)/m2.E)));
+}
+
+// Fatigue life — formatted string
+function fmtLife(cycles,rpm){
+  if(!isFinite(cycles)||cycles>1e10) return '&#8734; infinite life';
+  const hrs=cycles/(rpm*60),Mc=cycles/1e6;
+  if(hrs>100000) return `${(hrs/1000).toFixed(0)}k hrs (${Mc.toFixed(0)}M cyc)`;
+  if(hrs>1000)   return `${Math.round(hrs).toLocaleString()} hrs (${Mc.toFixed(1)}M cyc)`;
+  if(hrs>10)     return `${Math.round(hrs)} hrs`;
+  return `${Math.round(cycles/1000)}k cycles`;
+}
+
+// Safety factor badge
+function sfBadge(sf,okT,warnT){
+  if(sf>=okT)   return `<span class="sf-ok">SAFE &mdash; ${fmt(sf,2)}</span>`;
+  if(sf>=warnT) return `<span class="sf-warn">MARGINAL &mdash; ${fmt(sf,2)}</span>`;
+  return `<span class="sf-fail">UNSAFE &mdash; ${fmt(sf,2)}</span>`;
+}
+
+// Stress utilisation bar (red when over limit)
+function sBar(applied,allowed){
+  const pct=Math.min(150,applied/allowed*100);
+  const cls=pct<70?'ok':pct<100?'warn':'fail';
+  return `<div class="s-bar-wrap"><div class="s-bar ${cls}" style="width:${Math.min(100,pct).toFixed(1)}%"></div></div>`;
+}
+
+// Core stress calculation for one gear stage
+function stressOneStage(N1,N2,m,b,phi,T_Nm,rpm,KA,pmk,gmk){
+  const pm=MATS[pmk],gm=MATS[gmk];
+  const T=T_Nm*1000;               // N·m → N·mm
+  const d1=m*N1,d2=m*N2;          // pitch diameters mm
+  const Ft=(2*T)/d1;               // tangential force N  [2T/d]
+  const v=(Math.PI*d1*rpm)/60000;  // pitch line velocity m/s
+
+  // Dynamic factor Kv — Barth equation metric, AGMA quality 6 hobbed gears
+  const Kv=Math.max(1.0,(5.56+Math.sqrt(Math.max(0,v)))/5.56);
+
+  // Face load distribution factor KFβ — ISO 6336 Method B simplified
+  const KFb=1.0+0.15*Math.pow(b/d1,2);
+
+  // Lewis form factors (Y) for each gear
+  const Y1=lewisY(N1,phi),Y2=lewisY(N2,phi);
+
+  // Contact ratio + ISO 6336 bending contact ratio factor Yε
+  const ea=contRatio(N1,N2,phi);
+  const Ye=0.25+0.75/ea;  // ISO 6336-3 Eq.56
+
+  // ── Bending stress (ISO 6336 / Lewis) — N/mm² = MPa ───
+  // σF = Ft·KA·Kv·KFβ·Yε / (b·m·Y)
+  const sigma_F1=(Ft*KA*Kv*KFb*Ye)/(b*m*Y1);  // pinion MPa
+  const sigma_F2=(Ft*KA*Kv*KFb*Ye)/(b*m*Y2);  // gear MPa
+
+  // ── Contact stress (ISO 6336 Hertz) — MPa ────────────
+  const phiR=phi*Math.PI/180;
+  const ZH=Math.sqrt(4/Math.sin(2*phiR));      // zone factor
+  const ZE=ZEfac(pm,gm);                       // elasticity factor MPa^0.5
+  const Ze=Math.sqrt(Math.min((4-ea)/3,1.0));  // contact ratio factor
+  const u=Math.max(N1,N2)/Math.min(N1,N2);     // tooth ratio ≥ 1
+  // σH = ZH·ZE·Zε·√(Ft·KA·Kv·KFβ·(u+1)/(b·d1·u))
+  const sigma_H=ZH*ZE*Ze*Math.sqrt(Ft*KA*Kv*KFb*(u+1)/(b*d1*u));
+
+  // ── Minimum face width recommendations ────────────────
+  // Bending: solve b from σF = σF_allow/SF_target (KFβ=1 initial estimate)
+  const SF_t=1.5,SH_t=1.2;
+  // Governing pair = min(sF/Y) — the member that reaches its limit first
+  const govF=Math.min(pm.sF/Y1,gm.sF/Y2);
+  const b_min_F=(Ft*KA*Kv*1.0*Ye*SF_t)/(govF*m);
+
+  // Contact: rearrange σH formula for b
+  const sHlim=Math.min(pm.sH,gm.sH)/SH_t;
+  const b_min_H=(ZH*ZH*ZE*ZE*Ze*Ze*Ft*KA*Kv*(u+1))/(sHlim*sHlim*d1*u);
+  const b_min=Math.max(b_min_F,b_min_H);
+
+  // ── Safety factors ────────────────────────────────────
+  const SF1=sigma_F1>0?pm.sF/sigma_F1:999;
+  const SF2=sigma_F2>0?gm.sF/sigma_F2:999;
+  const SHp=sigma_H>0?pm.sH/sigma_H:999;
+  const SHg=sigma_H>0?gm.sH/sigma_H:999;
+  const SH=Math.min(SHp,SHg);
+
+  // ── Fatigue life — Wöhler S-N power law ──────────────
+  // NF = N_ref·(σFlim/σF)^mW  — finite only when σF > σFlim (SF<1)
+  const N_ref=3e6;
+  const mW=6.35;   // bending Wöhler exponent — ISO 6336 through-hardened steel
+  const mWH=3.33;  // contact Wöhler exponent (steeper slope — pitting)
+  const NF1=SF1>=1?Infinity:N_ref*Math.pow(pm.sF/sigma_F1,mW);
+  const NF2=SF2>=1?Infinity:N_ref*Math.pow(gm.sF/sigma_F2,mW);
+  const NHv=SH >=1?Infinity:N_ref*Math.pow(Math.min(pm.sH,gm.sH)/sigma_H,mWH);
+
+  return {N1,N2,m,b,phi,T_Nm,rpm,d1,d2,Ft,v,Kv,KA,KFb,ea,Y1,Y2,Ye,
+    sigma_F1,sigma_F2,sigma_H,
+    sF1a:pm.sF,sF2a:gm.sF,sHa:Math.min(pm.sH,gm.sH),
+    b_min,b_min_F,b_min_H,SF1,SF2,SH,NF1,NF2,NHv,pm,gm,ZH,ZE};
+}
+
+function renderStressBlock(r,idx){
+  const overallSF=Math.min(r.SF1,r.SF2);
+  const cls=overallSF>=1.5&&r.SH>=1.2?'s-ok':overallSF>=1.2&&r.SH>=1.0?'s-warn':'s-fail';
+  const badge=cls==='s-ok'?'&#10003; SAFE':cls==='s-warn'?'&#9888; MARGINAL':'&#10007; UNSAFE';
+  const bmin_disp=Math.ceil(r.b_min/0.5)*0.5;
+  return `<div class="stress-block">
+<div class="stress-head ${cls}">
+  <span>Stage ${idx} &mdash; ${r.N1}T:${r.N2}T &nbsp;m=${r.m} &nbsp;b=${r.b}mm &nbsp;${r.T_Nm}N&middot;m @${r.rpm}rpm</span>
+  <span>${badge}</span>
+</div>
+<div class="s-body">
+  <div class="s-section">
+    <div class="s-section-label">Load conditions</div>
+    <div class="s-qrow">
+      <span>F<sub>t</sub> = <b>${Math.round(r.Ft)} N</b></span>
+      <span>v = <b>${fmt(r.v,2)} m/s</b></span>
+      <span>K<sub>v</sub> = <b>${fmt(r.Kv,3)}</b></span>
+      <span>K<sub>F&beta;</sub> = <b>${fmt(r.KFb,3)}</b></span>
+      <span>&epsilon;<sub>&alpha;</sub> = <b>${fmt(r.ea,2)}</b></span>
+    </div>
+  </div>
+  <div class="s-section">
+    <div class="s-section-label">Bending stress &mdash; ISO 6336 / Lewis</div>
+    <div class="s-grid">
+      <div class="s-cell">
+        <div class="s-cell-lbl">Pinion &sigma;<sub>F1</sub> &nbsp;(Y=${fmt(r.Y1,3)})</div>
+        <div class="s-cell-val ${r.sigma_F1>r.sF1a?'over':''}">${fmt(r.sigma_F1,1)} MPa</div>
+        <div class="s-cell-sub">allow ${r.sF1a} MPa &mdash; ${r.pm.n}</div>
+        ${sBar(r.sigma_F1,r.sF1a)}
+      </div>
+      <div class="s-cell">
+        <div class="s-cell-lbl">Gear &sigma;<sub>F2</sub> &nbsp;(Y=${fmt(r.Y2,3)})</div>
+        <div class="s-cell-val ${r.sigma_F2>r.sF2a?'over':''}">${fmt(r.sigma_F2,1)} MPa</div>
+        <div class="s-cell-sub">allow ${r.sF2a} MPa &mdash; ${r.gm.n}</div>
+        ${sBar(r.sigma_F2,r.sF2a)}
+      </div>
+    </div>
+    <div class="s-sf-row">Bending safety factor: ${sfBadge(overallSF,1.5,1.2)} &nbsp;(target &ge; 1.5)</div>
+  </div>
+  <div class="s-section">
+    <div class="s-section-label">Contact stress &mdash; Hertz / ISO 6336</div>
+    <div class="s-grid">
+      <div class="s-cell wide">
+        <div class="s-cell-lbl">&sigma;<sub>H</sub> &nbsp;(Z<sub>H</sub>=${fmt(r.ZH,3)} &nbsp;Z<sub>E</sub>=${fmt(r.ZE,1)} MPa&frac12; &nbsp;u=${fmt(Math.max(r.N1,r.N2)/Math.min(r.N1,r.N2),2)})</div>
+        <div class="s-cell-val ${r.sigma_H>r.sHa?'over':''}">${fmt(r.sigma_H,1)} MPa</div>
+        <div class="s-cell-sub">allow ${r.sHa} MPa &mdash; weaker of ${r.pm.n} / ${r.gm.n}</div>
+        ${sBar(r.sigma_H,r.sHa)}
+      </div>
+    </div>
+    <div class="s-sf-row">Contact safety factor: ${sfBadge(r.SH,1.2,1.0)} &nbsp;(target &ge; 1.2)</div>
+  </div>
+  <div class="s-section">
+    <div class="s-section-label">Minimum face width (S<sub>F</sub>=1.5 / S<sub>H</sub>=1.2)</div>
+    <div class="s-fw-row">
+      <span>Current: <b>${r.b} mm</b></span>
+      <span>For bending: <b>${fmt(r.b_min_F,1)} mm</b></span>
+      <span>For contact: <b>${fmt(r.b_min_H,1)} mm</b></span>
+      ${r.b<r.b_min
+        ?`<span class="fw-warn">&#9650; Widen to &ge;${bmin_disp} mm</span>`
+        :`<span class="fw-ok">&#10003; Face width adequate</span>`}
+    </div>
+  </div>
+  <div class="s-section">
+    <div class="s-section-label">Fatigue life &mdash; W&ouml;hler S-N &nbsp;(N<sub>ref</sub>=3&times;10&sup6; cycles @ &sigma;<sub>lim</sub>)</div>
+    <div class="s-grid">
+      <div class="s-cell">
+        <div class="s-cell-lbl">Bending &mdash; pinion (m<sub>W</sub>=6.35)</div>
+        <div class="s-cell-val">${fmtLife(r.NF1,r.rpm)}</div>
+      </div>
+      <div class="s-cell">
+        <div class="s-cell-lbl">Bending &mdash; gear (m<sub>W</sub>=6.35)</div>
+        <div class="s-cell-val">${fmtLife(r.NF2,r.rpm)}</div>
+      </div>
+      <div class="s-cell wide">
+        <div class="s-cell-lbl">Contact / pitting (m<sub>W</sub>=3.33)</div>
+        <div class="s-cell-val">${fmtLife(r.NHv,r.rpm)}</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>`;
+}
+
+function updateStressStages(){
+  const stages=parseInt(document.getElementById('st-stages').value)||1;
+  const container=document.getElementById('stress-stages-container');
+  const ex={};
+  container.querySelectorAll('input,select').forEach(el=>{ex[el.id]=el.value;});
+  const g=(id,def)=>ex[id]!==undefined?ex[id]:def;
+  let html='';
+  for(let i=1;i<=stages;i++){
+    html+=`<div class="card" style="margin-bottom:10px">
+<div class="slabel">Stage ${i} — Gear geometry</div>
+<div class="field"><label>Driver teeth (N${i}a)</label><input type="number" id="st-n${i}a" value="${g('st-n'+i+'a',20)}" min="6" max="300" oninput="calcStress()"><span class="unit">T</span></div>
+<div class="field"><label>Driven teeth (N${i}b)</label><input type="number" id="st-n${i}b" value="${g('st-n'+i+'b',40)}" min="6" max="300" oninput="calcStress()"><span class="unit">T</span></div>
+<div class="field"><label>Module (m)</label><input type="number" id="st-m${i}" value="${g('st-m'+i,2)}" min="0.5" step="0.5" oninput="calcStress()"><span class="unit">mm</span></div>
+<div class="field"><label>Face width (b)</label><input type="number" id="st-b${i}" value="${g('st-b'+i,20)}" min="1" step="0.5" oninput="calcStress()"><span class="unit">mm</span></div>
+<div class="field"><label>Pressure angle (&phi;)</label>
+  <select id="st-phi${i}" onchange="calcStress()">
+    <option value="14.5">14.5&deg;</option>
+    <option value="20" selected>20&deg;</option>
+    <option value="25">25&deg;</option>
+  </select>
+</div>
+<div class="slabel" style="margin-top:10px">Stage ${i} — Load inputs</div>
+<div class="field"><label>Input torque</label><input type="number" id="st-t${i}" value="${g('st-t'+i,10)}" min="0.01" step="0.1" oninput="calcStress()"><span class="unit">N&middot;m</span></div>
+<div class="field"><label>Input speed</label><input type="number" id="st-rpm${i}" value="${g('st-rpm'+i,1000)}" min="1" oninput="calcStress()"><span class="unit">rpm</span></div>
+<div class="slabel" style="margin-top:10px">Stage ${i} — Material</div>
+<div class="field"><label>Pinion material</label><select id="st-pm${i}" onchange="calcStress()">${matOpts(g('st-pm'+i,'cs250'))}</select></div>
+<div class="field"><label>Gear material</label><select id="st-gm${i}" onchange="calcStress()">${matOpts(g('st-gm'+i,'cs180'))}</select></div>
+</div>`;
+  }
+  container.innerHTML=html;
+}
+
+function calcStress(){
+  const stages=parseInt(document.getElementById('st-stages').value)||1;
+  const KA=parseFloat(document.getElementById('st-ka').value)||1.25;
+  let html='';
+  for(let i=1;i<=stages;i++){
+    const gv=(id,def)=>{const el=document.getElementById(id);return el?(parseFloat(el.value)||def):def;};
+    const gs=(id,def)=>{const el=document.getElementById(id);return el?el.value:def;};
+    const r=stressOneStage(
+      Math.max(6,Math.round(gv('st-n'+i+'a',20))),
+      Math.max(6,Math.round(gv('st-n'+i+'b',40))),
+      gv('st-m'+i,2), gv('st-b'+i,20), gv('st-phi'+i,20),
+      gv('st-t'+i,10), gv('st-rpm'+i,1000),
+      KA, gs('st-pm'+i,'cs250'), gs('st-gm'+i,'cs180')
+    );
+    html+=renderStressBlock(r,i);
+  }
+  document.getElementById('stress-results-container').innerHTML=html;
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+calcRatio(); calcModule(); updateCompoundStages(); calcBevel(); updateStressStages(); calcStress();
+</script>
+</body>
+</html>
